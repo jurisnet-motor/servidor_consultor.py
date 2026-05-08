@@ -10,11 +10,13 @@ import uvicorn
 # ==============================
 # 🔐 CONFIGURAÇÃO DE ALTA FIDELIDADE
 # ==============================
+# Prioriza a variável de ambiente do Render para segurança máxima
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "SUA_CHAVE_AQUI")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-app = FastAPI()
+app = FastAPI(title="JurisNet Engine Sênior")
 
+# Configuração de CORS para permitir comunicação com o seu domínio
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,48 +40,56 @@ async def endpoint_consultor(
                 else:
                     contexto_fatos += dados.decode("utf-8", errors="ignore")
 
-        # PROMPT COM REGRAS DE EXPLICAÇÃO DIDÁTICA
+        # PROMPT DE ALTA COMPLEXIDADE JURÍDICA E DIDÁTICA
         prompt = f"""
-        VOCÊ É UM SISTEMA DE DUPLA ESPECIALIDADE DA JURISNET.COM.BR.
+        VOCÊ É UM CONSULTOR JURÍDICO SÊNIOR E ESPECIALISTA EM LÍNGUA PORTUGUESA DA JURISNET.COM.BR.
         
-        TRIAGEM DE RESPOSTA:
+        TRIAGEM DE RESPOSTA (DECIDA O FORMATO PELO CONTEÚDO):
         
-        CASO A: SOLICITAÇÃO DE EXPLICAÇÃO GRAMATICAL/LINGUÍSTICA
-        Atue como PROFESSOR E REVISOR VERNÁCULO. Siga RIGOROSAMENTE este formato:
+        CASO A: SOLICITAÇÃO LINGUÍSTICA (Gramática, Revisão, Dúvidas de Português)
+        Siga RIGOROSAMENTE este formato didático:
         "[Definição breve do assunto].
         1. [Nome da Regra/Tópico]
         [Explicação técnica curta]
         Ex.: [Exemplo prático]
         
-        [Repita a numeração para os demais itens...]
+        [Repita para os demais itens...]
 
         Resumo fácil / Em resumo:
-        [Tópicos rápidos ou conclusão marcante]"
+        [Tópicos rápidos ou conclusão]"
 
-        - Proibido usar formato jurídico para gramática.
-        - Se for revisão de texto, entregue a correção e a explicação gramatical nos moldes acima.
+        CASO B: SOLICITAÇÃO JURÍDICA (Consultoria, Análise de Fatos, Leis)
+        Atue como Advogado Sênior e Estruture OBRIGATORIAMENTE assim:
+        
+        1. **Introdução**: Apresentação técnica e resumida do tema jurídico.
+        2. **O que diz a Lei**: Citação detalhada de artigos (Código Civil, CPC, CLT, CP, CF) pertinentes ao tema. Simule uma busca na rede para precisão.
+        3. **Requisitos**: Listar as condições necessárias para a existência ou exercício do direito em questão.
+        4. **Exemplo Prático**: Uma situação hipotética para ilustrar a aplicação da norma.
+        5. **Procedimento da Ação Judicial**: Explicar o rito processual, onde protocolar e como funciona o trâmite.
+        6. **Tópicos Específicos (Provas)**: Detalhar o rol de documentos e evidências indispensáveis.
+        7. **Análise do Caso Concreto**: Aplicação direta de toda a fundamentação acima aos fatos narrados pelo usuário.
 
-        CASO B: SOLICITAÇÃO JURÍDICA
-        - Atue como Advogado Sênior.
-        - Estrutura: 1. Identificação da Área, 2. Análise de Viabilidade, 3. Fundamentação Técnica, 4. Doutrina.
-
-        --- CONTEXTO ADICIONAL ---
+        --- CONTEXTO DOS DOCUMENTOS ANEXADOS ---
         {contexto_fatos}
 
-        SOLICITAÇÃO: {tema}
+        SOLICITAÇÃO DO USUÁRIO: {tema}
         """
 
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "Você é um consultor híbrido. Para gramática, você segue o formato didático solicitado. Para direito, você é um advogado sênior."},
+                {"role": "system", "content": "Você é um jurista e filólogo sênior. Suas respostas jurídicas devem ser exaustivas e seguir a estrutura de 7 tópicos. Suas respostas gramaticais devem ser didáticas e numeradas."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.1
+            temperature=0.1 # Mantém a precisão técnica e evita alucinações
         )
+        
+        # Retorna o conteúdo formatado
         return {"status": "sucesso", "analise_html": response.choices[0].message.content}
+
     except Exception as e:
-        return {"status": "erro", "analise_html": f"Erro técnico: {str(e)}"}
+        return {"status": "erro", "analise_html": f"Erro técnico no processamento: {str(e)}"}
 
 if __name__ == "__main__":
+    # Rodar uvicorn servidor_consultor:app --port 10001
     uvicorn.run(app, host="0.0.0.0", port=10001)
